@@ -117,6 +117,7 @@ object Smoothly {
   }
 
   object cats {
+    import Smoothly.x._
     import jsoup._
 
     lazy val doc = Jsoup.parseURL("https://typelevel.org/cats/typeclasses/monad.html")
@@ -180,7 +181,7 @@ object Smoothly {
       })
 
     // The refactored equivalent of md2 in terms of for comprehensions
-    def md3 = {
+    def md3 =
       for {
         h      <- doc.$("div#content").headings.view
         indent  = "  "
@@ -190,14 +191,15 @@ object Smoothly {
         }
         heading = indent * depth + "- " + h.text.trim
         items   = for {
-          p  <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
-          el <- p.$$("a,code.language-plaintext.highlighter-rouge")
-          if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
-        } yield indent * 2 + "- " +
-          (if (el.normalName == "a") s"[${el.text.trim()}](${el.absUrl("href")})"
-           else el.text.trim())
+          p    <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
+          el   <- p.$$("a,code.language-plaintext.highlighter-rouge")
+          text  = el.text.trim
+          if !"""^[A-Z\[_\]]+$""".r.test(text) // Remove type parameters
+          title =
+            if (el.normalName == "a") s"[${text}](${el.absUrl("href")})"
+            else text
+        } yield indent * 2 + "- " + title
       } yield heading + "\n" + items.toStream.distinct.mkString("\n")
-    }
   }
 }
 import Smoothly.x._
