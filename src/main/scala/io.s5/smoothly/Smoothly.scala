@@ -65,6 +65,8 @@ object Smoothly {
           .takeWhile(el => el != null && !p(el))
       }
 
+      def headings = $$("h1,h2,h3,h4,h5,h6")
+
       def showStructure(depth: Int): String =
         show(el, depth, "")
 
