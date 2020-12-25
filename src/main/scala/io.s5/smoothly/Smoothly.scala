@@ -5,7 +5,7 @@ import org.jsoup.nodes.Document
 import scala.collection.JavaConverters._
 
 object Smoothly {
-  object x     {
+  object x {
     class O extends Dynamic {
 
       private val o = scala.collection.mutable.Map[String, Any]()
@@ -33,6 +33,9 @@ object Smoothly {
     object Jsoup {
       def parseFile(filename: String): Document =
         org.jsoup.Jsoup.parse(new File(filename), "UTF-8")
+
+      def parseURL(url: String): Document =
+        org.jsoup.Jsoup.connect(url).get
     }
 
     implicit def elements2scala(els: org.jsoup.select.Elements) = els.asScala
@@ -51,7 +54,7 @@ object Smoothly {
           .takeWhile(!p(_))
       }
 
-      def showStructure(depth: Int): String = 
+      def showStructure(depth: Int): String =
         show(el, depth, "")
 
       private def show(el: Element, depth: Int, indent: String): String =
