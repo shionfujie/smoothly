@@ -184,10 +184,11 @@ object Smoothly {
       for {
         h      <- doc.$("div#content").headings.view
         indent  = "  "
-        heading = (h.normalName match {
-          case "h1" | "h2" => indent * 0 + "- "
-          case "h3"        => indent * 1 + "- "
-        }) + h.text.trim
+        depth   = h.normalName match {
+          case "h1" | "h2" => 0
+          case "h3"        => 1
+        }
+        heading = indent * depth + "- " + h.text.trim
         items   = for {
           p  <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
           el <- p.$$("a,code.language-plaintext.highlighter-rouge")
