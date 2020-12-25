@@ -10,8 +10,8 @@ object Smoothly {
 
       private val o = scala.collection.mutable.Map[String, Any]()
 
-      def updateDynamic(fieldName: String)(fieldValue: Any) =
-        o(fieldName) = fieldValue match {
+      def update(name: String, value: Any) =
+        o(name) = value match {
           case f0: Function0[_]                => (_: Unit) => f0()
           case f2: Function2[_, _, _]          => f2.tupled
           case f3: Function3[_, _, _, _]       => f3.tupled
@@ -20,11 +20,21 @@ object Smoothly {
           case f                               => f
         }
 
+      def updateDynamic(name: String)(value: Any) =
+        update(name, value)
+
       def applyDynamic[X, Y](fieldName: String)(arg: X): Y =
         o(fieldName).asInstanceOf[X => Y](arg)
 
       override def toString: String =
         o.view.toList.map { case (k, v) => k + ": " + v }.mkString("{", ", ", "}")
+    }
+
+    object O {
+      def apply(props: (String, Any)*): O =
+        props.foldLeft(new O) { case (o, (name, value)) =>
+          o(name) = value; o;
+        }
     }
   }
 
@@ -84,5 +94,6 @@ object Smoothly {
     workRules.chap14 = () => chap14
   }
 }
+import Smoothly.x._
 import Smoothly.jsoup._
 import Smoothly.workRules._
