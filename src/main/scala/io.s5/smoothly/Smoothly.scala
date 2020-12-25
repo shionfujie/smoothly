@@ -3,6 +3,7 @@ package io.s5.smoothly
 import scala.language.dynamics
 import org.jsoup.nodes.Document
 import scala.collection.JavaConverters._
+import scala.util.matching.Regex
 
 object Smoothly {
   object x {
@@ -114,8 +115,87 @@ object Smoothly {
 
     def fullContent = doc $ ("div#fullContent")
   }
+
+  object cats {
+    import jsoup._
+
+    lazy val doc = Jsoup.parseURL("https://typelevel.org/cats/typeclasses/monad.html")
+
+    def md0 = doc.headings
+      .map(h => {
+        val title = h.text.trim()
+        h.normalName match {
+          case "h1" => "- " + title
+          case "h2" => "- " + title
+          case "h3" => "  - " + title
+        }
+      })
+      .mkString("\n")
+
+    def md1 = doc
+      .$("div#content")
+      .$$("h1,h2,h3,code.language-plaintext.highlighter-rouge,a")
+      .view
+      .filter(el => {
+        val tp = """^[A-Z\[_\]]+$""".r // Remove type parameters
+        el.text.trim() match {
+          case tp(_*) => false
+          case _      => true
+        }
+      })
+      .map(el => {
+        val title  = el.text.trim()
+        val indent = "  "
+        el.normalName match {
+          case "h1"   => indent * 0 + "- " + title
+          case "h2"   => indent * 0 + "- " + title
+          case "h3"   => indent * 1 + "- " + title
+          case "code" => indent * 2 + "- " + title
+          case "a"    => indent * 2 + s"- [${title}](${el.absUrl("href")})"
+        }
+      })
+      .mkString("\n")
+
+    def md2 = doc
+      .$("div#content")
+      .headings
+      .view
+      .map(el => {
+        val title   = el.text.trim()
+        val indent  = "  "
+        val heading = el.normalName match {
+          case "h1" | "h2" => indent * 0 + "- " + title
+          case "h3"        => indent * 1 + "- " + title
+        }
+        // Collect the siblings between headings
+        val items   = el
+          .nextElementSiblingsUntil(_.normalName match {
+            case "h1" | "h2" | "h3" => true
+            case _                  => false
+          })
+          .toStream
+          .flatMap(_.$$("a,code.language-plaintext.highlighter-rouge"))
+          .filter(el => {
+            val tp = """^[A-Z\[_\]]+$""".r // Remove type parameters
+            el.text.trim() match {
+              case tp(_*) => false
+              case _      => true
+            }
+          })
+          .map(el => {
+            val title =
+              if (el.normalName == "a") s"[${el.text.trim()}](${el.absUrl("href")})"
+              else el.text.trim()
+            "  " * 2 + "- " + title
+          })
+          .distinct
+          .mkString("\n")
+        heading + "\n" + items
+      })
+  }
 }
 import Smoothly.x._
 import Smoothly.jsoup._
 // import Smoothly.workRules._
-import Smoothly.wikiwandPhilanthropy._
+// import Smoothly.wikiwandPhilanthropy._
+import Smoothly.cats._
