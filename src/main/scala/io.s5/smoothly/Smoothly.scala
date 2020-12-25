@@ -43,6 +43,11 @@ object Smoothly {
         regex.pattern.matcher(source).find
     }
     implicit def regex2exts(r: Regex) = new RegexExts(r)
+
+    class StringExts(s: String) {
+      def sentences = s.replaceAll("""([.!?])\s+(?=.)""", "$1|").split("[|]")
+    }
+    implicit def string2exts(s: String) = new StringExts(s)
   }
 
   object jsoup {
