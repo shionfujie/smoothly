@@ -93,7 +93,15 @@ object Smoothly {
       .$("div#chapter014")
     workRules.chap14 = () => chap14
   }
+
+  object wikiwandPhilanthropy {
+    import jsoup._
+    lazy val doc = Jsoup.parseURL("https://www.wikiwand.com/en/Philanthropy")
+
+    def fullContent = doc $ ("div#fullContent")
+  }
 }
 import Smoothly.x._
 import Smoothly.jsoup._
-import Smoothly.workRules._
+// import Smoothly.workRules._
+import Smoothly.wikiwandPhilanthropy._
