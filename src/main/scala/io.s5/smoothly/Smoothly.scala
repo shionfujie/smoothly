@@ -32,8 +32,9 @@ object Smoothly {
 
     object O {
       def apply(props: (String, Any)*): O =
-        props.foldLeft(new O) { case (o, (name, value)) =>
-          o(name) = value; o;
+        props.foldLeft(new O) {
+          case (o, (name, value)) =>
+            o(name) = value; o;
         }
     }
   }
