@@ -167,7 +167,7 @@ object Smoothly {
           })
           .toStream
           .flatMap(_.$$("a,code.language-plaintext.highlighter-rouge"))
-          .filterNot("""^[A-Z\[_\]]+$""".r test _.text.trim) // Remove type parameters
+          .filterNot("""^[A-Z\[_\]]+$""".r test _.text.trim)
           .map(el => {
             val title =
               if (el.normalName == "a") s"[${el.text.trim()}](${el.absUrl("href")})"
@@ -179,6 +179,27 @@ object Smoothly {
         heading + "\n" + items
       })
 
+    // The refactored equivalent of md2 in terms of for comprehensions
+    def md3 = {
+      for {
+        h      <- doc.$("div#content").headings.view
+        indent  = "  "
+        heading = (h.normalName match {
+          case "h1" | "h2" => indent * 0 + "- "
+          case "h3"        => indent * 1 + "- "
+        }) + h.text.trim
+        items   = for {
+          p  <- h.nextElementSiblingsUntil(_.normalName match {
+            case "h1" | "h2" | "h3" => true
+            case _                  => false
+          })
+          el <- p.$$("a,code.language-plaintext.highlighter-rouge")
+          if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
+        } yield indent * 2 + "- " +
+          (if (el.normalName == "a") s"[${el.text.trim()}](${el.absUrl("href")})"
+           else el.text.trim())
+      } yield heading + "\n" + items.toStream.distinct.mkString("\n")
+    }
   }
 }
 import Smoothly.x._
