@@ -37,6 +37,12 @@ object Smoothly {
             o(name) = value; o;
         }
     }
+
+    class RegexExts(regex: Regex) {
+      def test(source: CharSequence): Boolean =
+        regex.pattern.matcher(source).find
+    }
+    implicit def regex2exts(r: Regex) = new RegexExts(r)
   }
 
   object jsoup {
