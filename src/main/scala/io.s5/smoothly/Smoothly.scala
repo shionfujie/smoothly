@@ -135,13 +135,7 @@ object Smoothly {
       .$("div#content")
       .$$("h1,h2,h3,code.language-plaintext.highlighter-rouge,a")
       .view
-      .filter(el => {
-        val tp = """^[A-Z\[_\]]+$""".r // Remove type parameters
-        el.text.trim() match {
-          case tp(_*) => false
-          case _      => true
-        }
-      })
+      .filterNot("""^[A-Z\[_\]]+$""".r test _.text.trim) // Remove type parameters
       .map(el => {
         val title  = el.text.trim()
         val indent = "  "
@@ -173,13 +167,7 @@ object Smoothly {
           })
           .toStream
           .flatMap(_.$$("a,code.language-plaintext.highlighter-rouge"))
-          .filter(el => {
-            val tp = """^[A-Z\[_\]]+$""".r // Remove type parameters
-            el.text.trim() match {
-              case tp(_*) => false
-              case _      => true
-            }
-          })
+          .filterNot("""^[A-Z\[_\]]+$""".r test _.text.trim) // Remove type parameters
           .map(el => {
             val title =
               if (el.normalName == "a") s"[${el.text.trim()}](${el.absUrl("href")})"
