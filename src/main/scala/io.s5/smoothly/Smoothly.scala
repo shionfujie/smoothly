@@ -125,8 +125,7 @@ object Smoothly {
       .map(h => {
         val title = h.text.trim()
         h.normalName match {
-          case "h1" => "- " + title
-          case "h2" => "- " + title
+          case "h1" | "h2" => "- " + title
           case "h3" => "  - " + title
         }
       })
@@ -147,8 +146,7 @@ object Smoothly {
         val title  = el.text.trim()
         val indent = "  "
         el.normalName match {
-          case "h1"   => indent * 0 + "- " + title
-          case "h2"   => indent * 0 + "- " + title
+          case "h1" | "h2"  => indent * 0 + "- " + title
           case "h3"   => indent * 1 + "- " + title
           case "code" => indent * 2 + "- " + title
           case "a"    => indent * 2 + s"- [${title}](${el.absUrl("href")})"
