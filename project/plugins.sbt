@@ -1,0 +1,1 @@
+initialize ~= (_ => sys.props("scala.repl.maxprintstring") = "0" ) // Sets no limit to print a large string
