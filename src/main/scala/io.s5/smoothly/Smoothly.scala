@@ -62,7 +62,7 @@ object Smoothly {
         def iterator = Iterator
           .iterate(el)(_.nextElementSibling)
           .drop(1)
-          .takeWhile(!p(_))
+          .takeWhile(el => el != null && !p(el))
       }
 
       def showStructure(depth: Int): String =
