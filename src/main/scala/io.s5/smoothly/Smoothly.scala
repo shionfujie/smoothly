@@ -189,10 +189,7 @@ object Smoothly {
           case "h3"        => indent * 1 + "- "
         }) + h.text.trim
         items   = for {
-          p  <- h.nextElementSiblingsUntil(_.normalName match {
-            case "h1" | "h2" | "h3" => true
-            case _                  => false
-          })
+          p  <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
           el <- p.$$("a,code.language-plaintext.highlighter-rouge")
           if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
         } yield indent * 2 + "- " +
