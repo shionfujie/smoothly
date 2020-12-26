@@ -410,7 +410,7 @@ object Smoothly {
         selectorss = for {
           el       <- h.nextElementSiblings.takeWhile(_.normalName != "h3")
           li       <- el.$$("li")
-          // Inside an li element, there are code elements that are explaining a 
+          // Inside an li element, there are code elements that are explaining a
           // single topic, so groups them to present them in such manner
           selectors = for {
             code    <- li.$$("code")
@@ -426,7 +426,7 @@ object Smoothly {
         "selectorss" -> selectorss
       )
     def syntaxesPres = {
-      val overview = md.listItems(syntaxes.map(_.title[String]))
+      val overview  = md.listItems(syntaxes.map(_.title[String]))
       val listItems = syntaxes
         .map(section => {
           // Joining grouped selectors with new lines
@@ -443,6 +443,25 @@ object Smoothly {
         .mkString("\n")
       overview + "\n\n" + listItems
     }
+
+    lazy val doc2 = Jsoup.parseURL("https://jsoup.org/apidocs/overview-tree.html")
+
+    def hierarchies =
+      for {
+        li <- doc2.$$("section.hierarchy li.circle")
+        anchorToClassName = li.$("a")
+      } yield O(
+        "importPath" -> anchorToClassName.previousSibling.toString,
+        "name" -> anchorToClassName.text.trim,
+        "href" -> anchorToClassName.absUrl("href")
+      )
+    def hierarchiesPres(hierarchies: Seq[O]) =
+      md.listItems(hierarchies.map{ obj =>
+        md.link(obj.importPath[String] + obj.name[String], obj.href[String])
+      })
+
+    def evaluators = 
+      hierarchies.filter(_.name[String] contains "Evaluator")
   }
 }
 import Smoothly.x._
