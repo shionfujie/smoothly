@@ -259,6 +259,7 @@ object Smoothly {
   object jetBrains {
     import Smoothly.x._
     import jsoup._
+    import org.jsoup.nodes.Element
 
     lazy val doc = Jsoup.parseURL("https://blog.jetbrains.com/idea/2020/12/putting-it-all-together/")
 
@@ -284,6 +285,68 @@ object Smoothly {
           .$$("section.main-content > div.related-posts article")
           .map(article => s"- [${article.$("a").absUrl("href")}](${article.$("h3.post-title").text.trim})")
           .mkString("\n")
+
+    private object md {
+      def listItem(text: String) = "- " + text
+
+      def listItems(texts: Traversable[String]) =
+        texts.map(listItem _).mkString("\n")
+
+      def link(text: String, href: String) = s"[${text}](${href})"
+    }
+
+    private def toListItem(el: Element) = {
+      val indent = "  "
+      val text   = el.text.trim
+      el.normalName match {
+        case "a" => md.listItem(md.link(text, el.absUrl("href")))
+        case _   => md.listItem(text)
+      }
+    }
+
+    private def toListItems(els: Traversable[Element]) =
+      els.map(toListItem _).mkString("\n")
+
+    def toc1     = doc.headings
+    def tocPres1 = "Contents\n" + toListItems(toc1)
+
+    def mainContent1     =
+      for {
+        h             <- doc.$("section.main-content div.full-content").headings
+        paragraphs     = h.nextElementSiblings.takeWhile(_.normalName != "h2")
+        anchors        = for {
+          el <- paragraphs
+          a  <- el.$$("a")
+        } yield a
+        firstSentences = for {
+          el           <- paragraphs
+          firstSentence = el.text.sentences(0)
+          if firstSentence.nonEmpty
+        } yield firstSentence
+      } yield O(
+        "heading" -> h,
+        "anchors"        -> anchors,
+        "firstSentences" -> firstSentences
+      )
+    def mainContentPres1 =
+      mainContent1
+        .map { section =>
+          "\n" + section.heading[Element].text.trim + "\n" +
+            toListItems(section.anchors) + "\n" +
+            md.listItems(section.firstSentences)
+        }
+        .mkString("\n")
+
+    def relatedPosts1     =
+      for {
+        article <- doc.$$("section.main-content > div.related-posts article")
+      } yield O(
+        "title" -> article.$("h3.post-title").text.trim,
+        "href"  -> article.$("a").absUrl("href")
+      )
+    def relatedPostsPres1 =
+      "Related Posts\n" +
+        md.listItems(relatedPosts1.map(post => md.link(post.title, post.href)))
   }
 }
 import Smoothly.x._
