@@ -348,10 +348,41 @@ object Smoothly {
       "Related Posts\n" +
         md.listItems(relatedPosts1.map(post => md.link(post.title, post.href)))
   }
+
+  object jsoupDoc {
+    import Smoothly.x._
+    import jsoup._
+    import org.jsoup.nodes.Element
+
+    private object md {
+      def listItem(text: String) = "- " + text
+
+      def listItems(texts: Traversable[String]) =
+        texts.map(listItem _).mkString("\n")
+
+      def link(text: String, href: String) = s"[${text}](${href})"
+    }
+
+    private def toListItem(el: Element) = {
+      val indent = "  "
+      val text   = el.text.trim
+      el.normalName match {
+        case "a" => md.listItem(md.link(text, el.absUrl("href")))
+        case _   => md.listItem(text)
+      }
+    }
+
+    private def toListItems(els: Traversable[Element]) =
+      els.map(toListItem _).mkString("\n")
+
+    lazy val doc1 = Jsoup.parseURL("https://jsoup.org/cookbook/extracting-data/dom-navigation")
+    
+  }
 }
 import Smoothly.x._
 import Smoothly.jsoup._
 // import Smoothly.workRules._
 // import Smoothly.wikiwandPhilanthropy._
 // import Smoothly.cats._
-import Smoothly.jetBrains._
+// import Smoothly.jetBrains._
+import Smoothly.jsoupDoc._
