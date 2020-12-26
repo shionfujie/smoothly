@@ -233,6 +233,27 @@ object Smoothly {
         } yield el
       } yield toListItem(h) + "\n" +
         items.map(toListItem _).distinct.mkString("\n")
+
+    def l4 =
+      for {
+        h    <- doc.$("div#content").headings.view
+        items = for {
+          // Collect all the paragraphs between headings
+          p  <- h.nextElementSiblings.takeWhile(p => !(Set("h1", "h2", "h3") contains p.normalName))
+          el <- p.$$("a,code.language-plaintext.highlighter-rouge")
+          if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
+        } yield el
+      } yield O(
+        "heading" -> h,
+        "items" -> items
+      )
+
+    def section2MD(section: O) =
+      toListItem(section.heading) + "\n" +
+        section.items[Seq[Element]].map(toListItem _).distinct.mkString("\n")
+
+    def md4 =
+      l4.map(section2MD _)
   }
 }
 import Smoothly.x._
