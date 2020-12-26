@@ -71,15 +71,13 @@ object Smoothly {
 
       def $$(selector: String) = el.select(selector)
 
-      def nextElementSiblings = new Iterable[Element] {
-        def iterator = Iterator
+      def nextElementSiblings: Seq[Element] =
+        Stream
           .iterate(el.nextElementSibling)(_.nextElementSibling)
           .takeWhile(el => el != null)
-      }
 
-      def nextElementSiblingsUntil(p: Element => Boolean) = 
+      def nextElementSiblingsUntil(p: Element => Boolean): Seq[Element] =
         nextElementSiblings.takeWhile(!p(_))
-      
 
       def headings = $$("h1,h2,h3,h4,h5,h6")
 
@@ -226,7 +224,7 @@ object Smoothly {
           if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
         } yield el
       } yield toListItem(h) + "\n" +
-        items.map(toListItem _).toStream.distinct.mkString("\n")
+        items.map(toListItem _).distinct.mkString("\n")
   }
 }
 import Smoothly.x._
