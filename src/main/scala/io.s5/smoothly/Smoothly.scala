@@ -4,6 +4,7 @@ import scala.language.dynamics
 import org.jsoup.nodes.Document
 import scala.collection.JavaConverters._
 import scala.util.matching.Regex
+import scala.collection.TraversableLike
 
 object Smoothly {
   object x {
@@ -180,26 +181,49 @@ object Smoothly {
         heading + "\n" + items
       })
 
+    import org.jsoup.nodes.Element
+    private def depthOf(el: Element) = el.normalName match {
+      case "h1" | "h2" => 0
+      case "h3"        => 1
+      case _           => 2
+    }
+
+    private object md {
+      def listItem(text: String)           = "- " + text
+      // import scala.collection.generic.CanBuildFrom
+      // def listItems[CC <: TraversableLike[String, CC]](texts: CC)(implicit cbf: CanBuildFrom[CC, String, CC]): CC = {
+      //   val b = cbf(texts); b.sizeHint(texts);
+      //   b ++= texts.map(listItem _)
+      //   b.result
+      // }
+      def link(text: String, href: String) = s"[${text}](${href})"
+    }
+
+    private def toListItem(el: Element) = {
+      val indent   = "  "
+      val text     = el.text.trim
+      val listItem = el.normalName match {
+        case "a" => md.listItem(md.link(text, el.absUrl("href")))
+        case _   => md.listItem(text)
+      }
+      indent * depthOf(el) + listItem
+    }
+
+    private def toListItems(els: Traversable[Element]) =
+      els.map(toListItem _).mkString("\n")
+
     // The refactored equivalent of md2 in terms of for comprehensions
     def md3 =
       for {
-        h      <- doc.$("div#content").headings.view
-        indent  = "  "
-        depth   = h.normalName match {
-          case "h1" | "h2" => 0
-          case "h3"        => 1
-        }
-        heading = indent * depth + "- " + h.text.trim
-        items   = for {
-          p    <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
-          el   <- p.$$("a,code.language-plaintext.highlighter-rouge")
-          text  = el.text.trim
-          if !"""^[A-Z\[_\]]+$""".r.test(text) // Remove type parameters
-          title =
-            if (el.normalName == "a") s"[${text}](${el.absUrl("href")})"
-            else text
-        } yield indent * 2 + "- " + title
-      } yield heading + "\n" + items.toStream.distinct.mkString("\n")
+        h    <- doc.$("div#content").headings.view
+        items = for {
+          // Collect all the paragraphs between headings
+          p  <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
+          el <- p.$$("a,code.language-plaintext.highlighter-rouge")
+          if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
+        } yield el
+      } yield toListItem(h) + "\n" +
+        items.map(toListItem _).toStream.distinct.mkString("\n")
   }
 }
 import Smoothly.x._
