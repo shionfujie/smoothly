@@ -376,7 +376,29 @@ object Smoothly {
       els.map(toListItem _).mkString("\n")
 
     lazy val doc1 = Jsoup.parseURL("https://jsoup.org/cookbook/extracting-data/dom-navigation")
-    
+
+    def methods =
+      for {
+        h      <- doc1.$$("div.recipe > h3")
+        methods = for {
+          el           <- h.nextElementSiblings.takeWhile(_.normalName != "h3")
+          linkToMethod <- el.$$("li code a")
+        } yield O(
+          "methodName" -> linkToMethod.text.trim,
+          "href"       -> linkToMethod.absUrl("href")
+        )
+      } yield O(
+        "title" -> h.text.trim(),
+        "methods" -> methods
+      )
+    def methodsPres = {
+      val overview = md.listItems(methods.map(_.title[String]))
+      val listItems = methods.map{section =>
+        "\n" + section.title + "\n" +
+          md.listItems(section.methods[Seq[O]].map(m => md.link(m.methodName, m.href)))
+      }.mkString("\n")
+      overview + "\n\n" + listItems
+    }
   }
 }
 import Smoothly.x._
