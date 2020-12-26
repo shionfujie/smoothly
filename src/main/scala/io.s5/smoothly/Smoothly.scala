@@ -375,11 +375,11 @@ object Smoothly {
     private def toListItems(els: Traversable[Element]) =
       els.map(toListItem _).mkString("\n")
 
-    lazy val doc1 = Jsoup.parseURL("https://jsoup.org/cookbook/extracting-data/dom-navigation")
+    lazy val doc0 = Jsoup.parseURL("https://jsoup.org/cookbook/extracting-data/dom-navigation")
 
     def methods =
       for {
-        h      <- doc1.$$("div.recipe > h3")
+        h      <- doc0.$$("div.recipe > h3")
         methods = for {
           el           <- h.nextElementSiblings.takeWhile(_.normalName != "h3")
           linkToMethod <- el.$$("li code a")
@@ -392,11 +392,55 @@ object Smoothly {
         "methods" -> methods
       )
     def methodsPres = {
-      val overview = md.listItems(methods.map(_.title[String]))
-      val listItems = methods.map{section =>
-        "\n" + section.title + "\n" +
-          md.listItems(section.methods[Seq[O]].map(m => md.link(m.methodName, m.href)))
-      }.mkString("\n")
+      val overview  = md.listItems(methods.map(_.title[String]))
+      val listItems = methods
+        .map { section =>
+          "\n" + section.title + "\n" +
+            md.listItems(section.methods[Seq[O]].map(m => md.link(m.methodName, m.href)))
+        }
+        .mkString("\n")
+      overview + "\n\n" + listItems
+    }
+
+    lazy val doc1 = Jsoup.parseURL("https://jsoup.org/cookbook/extracting-data/selector-syntax")
+
+    def syntaxes =
+      for {
+        h         <- doc1.$$("div.recipe > h3")
+        selectorss = for {
+          el       <- h.nextElementSiblings.takeWhile(_.normalName != "h3")
+          li       <- el.$$("li")
+          // Inside an li element, there are code elements that are explaining a 
+          // single topic, so groups them to present them in such manner
+          selectors = for {
+            code    <- li.$$("code")
+            selector = code.text.trim
+            if selector.length > 1 // These are likely to be "n", "a" or the likes
+          } yield O(
+            "selector" -> selector
+          )
+          if selectors.nonEmpty
+        } yield selectors
+      } yield O(
+        "title" -> h.text.trim(),
+        "selectorss" -> selectorss
+      )
+    def syntaxesPres = {
+      val overview = md.listItems(syntaxes.map(_.title[String]))
+      val listItems = syntaxes
+        .map(section => {
+          // Joining grouped selectors with new lines
+          // Then making those grouped selectors as a single list item
+          // Concatenates the headings and list items
+          val selectors = section
+            .selectorss[Seq[Seq[O]]]
+            .map { selectors =>
+              selectors.map(_.selector[String]).mkString("\n")
+            }
+          "\n" + section.title + "\n" +
+            md.listItems(selectors)
+        })
+        .mkString("\n")
       overview + "\n\n" + listItems
     }
   }
