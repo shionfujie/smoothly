@@ -28,6 +28,14 @@ object Smoothly {
       def applyDynamic[X, Y](fieldName: String)(arg: X): Y =
         o(fieldName).asInstanceOf[X => Y](arg)
 
+      def selectDynamic[Y](name: String): Y = {
+        val value = o(name) match {
+          case f0: Function0[_] => f0()
+          case x                => x
+        }
+        value.asInstanceOf[Y]
+      }
+
       override def toString: String =
         o.view.toList.map { case (k, v) => k + ": " + v }.mkString("{", ", ", "}")
     }
