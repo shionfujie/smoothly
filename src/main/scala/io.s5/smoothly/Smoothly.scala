@@ -255,9 +255,37 @@ object Smoothly {
     def md4 =
       l4.map(section2MD _)
   }
+
+  object jetBrains {
+    import Smoothly.x._
+    import jsoup._
+
+    def toc =
+      "Contents\n" + Jsoup.parseURL("https://blog.jetbrains.com/idea/2020/12/putting-it-all-together/").$("section.main-content div.full-content").headings.map("- " + _.text.trim).mkString("\n")
+
+    def mainContent = Jsoup
+      .parseURL("https://blog.jetbrains.com/idea/2020/12/putting-it-all-together/")
+      .$("section.main-content div.full-content")
+      .headings
+      .map(h =>
+        "\n" + h.text.trim() + "\n" + h
+          .nextElementSiblingsUntil(_.normalName == "h2")
+          .flatMap(_.$$("a"))
+          .map(el => s"- [${el.text.trim}](${el.absUrl("href")})")
+          .mkString("\n") + "\n" + h.nextElementSiblingsUntil(_.normalName == "h2").map(_.text.sentences(0)).filter(_.nonEmpty).map("- " + _).mkString("\n")
+      )
+      .mkString("\n")
+
+    def relatedPosts = "Related Posts" + "\n" + Jsoup
+      .parseURL("https://blog.jetbrains.com/idea/2020/12/putting-it-all-together/")
+      .$$("section.main-content > div.related-posts article")
+      .map(article => s"- [${article.$("a").absUrl("href")}](${article.$("h3.post-title").text.trim})")
+      .mkString("\n")
+  }
 }
 import Smoothly.x._
 import Smoothly.jsoup._
 // import Smoothly.workRules._
 // import Smoothly.wikiwandPhilanthropy._
-import Smoothly.cats._
+// import Smoothly.cats._
+import Smoothly.jetBrains._
