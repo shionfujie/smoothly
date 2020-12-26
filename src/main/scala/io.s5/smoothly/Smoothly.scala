@@ -71,11 +71,15 @@ object Smoothly {
 
       def $$(selector: String) = el.select(selector)
 
-      def nextElementSiblingsUntil(p: Element => Boolean) = new Iterable[Element] {
+      def nextElementSiblings = new Iterable[Element] {
         def iterator = Iterator
           .iterate(el.nextElementSibling)(_.nextElementSibling)
-          .takeWhile(el => el != null && !p(el))
+          .takeWhile(el => el != null)
       }
+
+      def nextElementSiblingsUntil(p: Element => Boolean) = 
+        nextElementSiblings.takeWhile(!p(_))
+      
 
       def headings = $$("h1,h2,h3,h4,h5,h6")
 
@@ -217,7 +221,7 @@ object Smoothly {
         h    <- doc.$("div#content").headings.view
         items = for {
           // Collect all the paragraphs between headings
-          p  <- h.nextElementSiblingsUntil(Set("h1", "h2", "h3") contains _.normalName)
+          p  <- h.nextElementSiblings.takeWhile(p => !(Set("h1", "h2", "h3") contains p.normalName))
           el <- p.$$("a,code.language-plaintext.highlighter-rouge")
           if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
         } yield el
