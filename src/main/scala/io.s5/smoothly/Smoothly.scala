@@ -73,8 +73,7 @@ object Smoothly {
 
       def nextElementSiblingsUntil(p: Element => Boolean) = new Iterable[Element] {
         def iterator = Iterator
-          .iterate(el)(_.nextElementSibling)
-          .drop(1)
+          .iterate(el.nextElementSibling)(_.nextElementSibling)
           .takeWhile(el => el != null && !p(el))
       }
 
