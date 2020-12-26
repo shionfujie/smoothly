@@ -234,12 +234,14 @@ object Smoothly {
       } yield toListItem(h) + "\n" +
         items.map(toListItem _).distinct.mkString("\n")
 
+    import org.jsoup.select.QueryParser
     def l4 =
       for {
-        h    <- doc.$("div#content").headings.view
-        items = for {
-          // Collect all the paragraphs between headings
-          p  <- h.nextElementSiblings.takeWhile(p => !(Set("h1", "h2", "h3") contains p.normalName))
+        h         <- doc.$("div#content").headings.view
+        // Collect all the paragraphs between headings
+        nonHeading = (el: Element) => !QueryParser.parse("h1,h2,h3").matches(h, el)
+        items      = for {
+          p  <- h.nextElementSiblings.takeWhile(nonHeading)
           el <- p.$$("a,code.language-plaintext.highlighter-rouge")
           if !"""^[A-Z\[_\]]+$""".r.test(el.text.trim) // Remove type parameters
         } yield el
@@ -446,21 +448,21 @@ object Smoothly {
 
     lazy val doc2 = Jsoup.parseURL("https://jsoup.org/apidocs/overview-tree.html")
 
-    def hierarchies =
+    def hierarchies                          =
       for {
-        li <- doc2.$$("section.hierarchy li.circle")
+        li               <- doc2.$$("section.hierarchy li.circle")
         anchorToClassName = li.$("a")
       } yield O(
         "importPath" -> anchorToClassName.previousSibling.toString,
-        "name" -> anchorToClassName.text.trim,
-        "href" -> anchorToClassName.absUrl("href")
+        "name"       -> anchorToClassName.text.trim,
+        "href"       -> anchorToClassName.absUrl("href")
       )
     def hierarchiesPres(hierarchies: Seq[O]) =
-      md.listItems(hierarchies.map{ obj =>
+      md.listItems(hierarchies.map { obj =>
         md.link(obj.importPath[String] + obj.name[String], obj.href[String])
       })
 
-    def evaluators = 
+    def evaluators =
       hierarchies.filter(_.name[String] contains "Evaluator")
   }
 }
@@ -468,6 +470,6 @@ import Smoothly.x._
 import Smoothly.jsoup._
 // import Smoothly.workRules._
 // import Smoothly.wikiwandPhilanthropy._
-// import Smoothly.cats._
+import Smoothly.cats._
 // import Smoothly.jetBrains._
-import Smoothly.jsoupDoc._
+// import Smoothly.jsoupDoc._
