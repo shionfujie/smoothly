@@ -481,6 +481,24 @@ object Smoothly {
       def link(text: String, href: String) = s"[${text}](${href})"
     }
 
+    object presentation {
+      def listItem(el: Element) = {
+        val indent = "  "
+        val text   = el.text.trim
+        el.normalName match {
+          case "a" => md.listItem(md.link(text, el.absUrl("href")))
+          case _   => md.listItem(text)
+        }
+      }
+
+      def listItems(els: Traversable[Element]) =
+        els.map(toListItem _).mkString("\n")
+
+      def firstSentences(els: Traversable[Element]) =
+        els.map(_.text.trim.sentences(0)).mkString("\n")
+
+    }
+
     def toListItem(el: Element) = {
       val indent = "  "
       val text   = el.text.trim
@@ -549,7 +567,7 @@ object Smoothly {
         headings.mkString("\n")
     }
 
-    def introduction = {
+    def introductoryPart = {
       val paragraphs = mainContent
         .$$(":root > *:not(.shortdescription):not(.hatnote)")
         .takeWhile(el => el.normalName != "div" || el.id != "toc")
@@ -558,8 +576,8 @@ object Smoothly {
         a <- p.$$("a:not([href^='#cite'])")
       } yield a
       "Overview" + "\n" +
-        toListItems(links) + "\n\n" +
-        paragraphs.map(_.text.trim.sentences(0)).mkString("\n")
+        presentation.listItems(links) + "\n\n" +
+        presentation.firstSentences(paragraphs)
     }
 
   }
