@@ -133,13 +133,13 @@ object Smoothly {
     lazy val doc = Jsoup.parseURL("https://typelevel.org/cats/typeclasses/monad.html")
 
     def md0 = doc.headings
-      .map(h => {
+      .map { h =>
         val title = h.text.trim()
         h.normalName match {
           case "h1" | "h2" => "- " + title
           case "h3"        => "  - " + title
         }
-      })
+      }
       .mkString("\n")
 
     def md1 = doc
@@ -147,7 +147,7 @@ object Smoothly {
       .$$("h1,h2,h3,code.language-plaintext.highlighter-rouge,a")
       .view
       .filterNot("""^[A-Z\[_\]]+$""".r test _.text.trim) // Remove type parameters
-      .map(el => {
+      .map { el =>
         val title  = el.text.trim()
         val indent = "  "
         el.normalName match {
@@ -156,14 +156,14 @@ object Smoothly {
           case "code"      => indent * 2 + "- " + title
           case "a"         => indent * 2 + s"- [${title}](${el.absUrl("href")})"
         }
-      })
+      }
       .mkString("\n")
 
     def md2 = doc
       .$("div#content")
       .headings
       .view
-      .map(el => {
+      .map { el =>
         val title   = el.text.trim()
         val indent  = "  "
         val heading = el.normalName match {
@@ -179,16 +179,16 @@ object Smoothly {
           .toStream
           .flatMap(_.$$("a,code.language-plaintext.highlighter-rouge"))
           .filterNot("""^[A-Z\[_\]]+$""".r test _.text.trim)
-          .map(el => {
+          .map { el =>
             val title =
               if (el.normalName == "a") s"[${el.text.trim()}](${el.absUrl("href")})"
               else el.text.trim()
             "  " * 2 + "- " + title
-          })
+          }
           .distinct
           .mkString("\n")
         heading + "\n" + items
-      })
+      }
 
     import org.jsoup.nodes.Element
     private def depthOf(el: Element) = el.normalName match {
@@ -430,7 +430,7 @@ object Smoothly {
     def syntaxesPres = {
       val overview  = md.listItems(syntaxes.map(_.title[String]))
       val listItems = syntaxes
-        .map(section => {
+        .map { section =>
           // Joining grouped selectors with new lines
           // Then making those grouped selectors as a single list item
           // Concatenates the headings and list items
@@ -441,7 +441,7 @@ object Smoothly {
             }
           "\n" + section.title + "\n" +
             md.listItems(selectors)
-        })
+        }
         .mkString("\n")
       overview + "\n\n" + listItems
     }
@@ -536,7 +536,7 @@ object Smoothly {
     def overview = {
       val content        = doc0.$("div#content")
       val mainContent    = content.$("div#bodyContent > div#mw-content-text > div.mw-parser-output")
-      val overview: O    = page.overview
+      val overview: O    = page().overview
       val firstSentences = overview.firstSentences[Seq[String]].mkString("\n")
       val headings       = for {
         h    <- mainContent.$$(":root > h2,:root > h3")
@@ -550,6 +550,9 @@ object Smoothly {
         firstSentences + "\n" +
         headings.mkString("\n")
     }
+
+    def introduction =
+      ""
 
   }
 }
