@@ -465,11 +465,99 @@ object Smoothly {
     def evaluators =
       hierarchies.filter(_.name[String] contains "Evaluator")
   }
+
+  object wikipedia {
+    import Smoothly.x._
+    import jsoup._
+    import org.jsoup.nodes.Element
+    import org.jsoup.select.QueryParser
+
+    private object md {
+      def listItem(text: String) = "- " + text
+
+      def listItems(texts: Traversable[String]) =
+        texts.map(listItem _).mkString("\n")
+
+      def link(text: String, href: String) = s"[${text}](${href})"
+    }
+
+    private def toListItem(el: Element) = {
+      val indent = "  "
+      val text   = el.text.trim
+      el.normalName match {
+        case "a" => md.listItem(md.link(text, el.absUrl("href")))
+        case _   => md.listItem(text)
+      }
+    }
+
+    private def toListItems(els: Traversable[Element]) =
+      els.map(toListItem _).mkString("\n")
+
+    lazy val doc0 = Jsoup.parseURL("https://en.wikipedia.org/wiki/Philanthropy?oldformat=true")
+
+    def page = {
+      val page        = O()
+      val content     = doc0.$("div#content")
+      page.title = content.$("h1#firstHeading").text.trim
+      val mainContent = content.$("div#bodyContent > div#mw-content-text > div.mw-parser-output")
+
+      val overview           = O()
+      val overviewParagraphs = mainContent.$$(":root > p:lt(5)")
+      overview.firstSentences = overviewParagraphs.map(_.text.sentences(0))
+      overview.links = for {
+        p <- overviewParagraphs
+        a <- p.$$("a:not([href^=#cite])")
+      } yield O(
+        "title" -> a.text.trim,
+        "href"  -> a.absUrl("href")
+      )
+      page.overview = overview
+
+      page.sections = for {
+        h           <- mainContent.$$(":root > h2")
+        title        = h.$("span").text.trim
+        if title != "References" && title != "Further reading"
+        elsInBetween = h.nextElementSiblings.takeWhile(_.normalName != "h2")
+        links        = for {
+          el <- elsInBetween
+          a  <- el.$$("a:not([href^=#cite])")
+        } yield O(
+          "title" -> a.text.trim,
+          "href"  -> a.absUrl("href")
+        )
+      } yield O(
+        "title" -> title,
+        "firstSentences" -> elsInBetween.map(_.text.trim.sentences(0)),
+        "links"          -> links
+      )
+      page
+    }
+
+    def overview = {
+      val content        = doc0.$("div#content")
+      val mainContent    = content.$("div#bodyContent > div#mw-content-text > div.mw-parser-output")
+      val overview: O    = page.overview
+      val firstSentences = overview.firstSentences[Seq[String]].mkString("\n")
+      val headings       = for {
+        h    <- mainContent.$$(":root > h2,:root > h3")
+        title = h.$("span").text.trim
+        if title != "References" && title != "Further reading"
+      } yield h.normalName match {
+        case "h2" => md.listItem(title)
+        case _    => "  " + md.listItem(title)
+      }
+      page.title[String] + "\n\n" +
+        firstSentences + "\n" +
+        headings.mkString("\n")
+    }
+
+  }
 }
 import Smoothly.x._
 import Smoothly.jsoup._
 // import Smoothly.workRules._
 // import Smoothly.wikiwandPhilanthropy._
-import Smoothly.cats._
+// import Smoothly.cats._
 // import Smoothly.jetBrains._
 // import Smoothly.jsoupDoc._
+import Smoothly.wikipedia._
