@@ -472,7 +472,7 @@ object Smoothly {
     import org.jsoup.nodes.Element
     import org.jsoup.select.QueryParser
 
-    private object md {
+    object md {
       def listItem(text: String) = "- " + text
 
       def listItems(texts: Traversable[String]) =
@@ -481,7 +481,7 @@ object Smoothly {
       def link(text: String, href: String) = s"[${text}](${href})"
     }
 
-    private def toListItem(el: Element) = {
+    def toListItem(el: Element) = {
       val indent = "  "
       val text   = el.text.trim
       el.normalName match {
@@ -490,7 +490,7 @@ object Smoothly {
       }
     }
 
-    private def toListItems(els: Traversable[Element]) =
+    def toListItems(els: Traversable[Element]) =
       els.map(toListItem _).mkString("\n")
 
     lazy val document    = Jsoup.parseURL("https://en.wikipedia.org/wiki/Philanthropy?oldformat=true")
@@ -556,9 +556,9 @@ object Smoothly {
       val links      = for {
         p <- paragraphs
         a <- p.$$("a:not([href^='#cite'])")
-      } yield s"- [${a.text.trim}](${a.absUrl("href")})"
+      } yield a
       "Overview" + "\n" +
-        links.mkString("\n") + "\n\n" +
+        toListItems(links) + "\n\n" +
         paragraphs.map(_.text.trim.sentences(0)).mkString("\n")
     }
 
