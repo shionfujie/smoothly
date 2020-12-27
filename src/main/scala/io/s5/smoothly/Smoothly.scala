@@ -493,13 +493,13 @@ object Smoothly {
     private def toListItems(els: Traversable[Element]) =
       els.map(toListItem _).mkString("\n")
 
-    lazy val doc0 = Jsoup.parseURL("https://en.wikipedia.org/wiki/Philanthropy?oldformat=true")
+    lazy val document    = Jsoup.parseURL("https://en.wikipedia.org/wiki/Philanthropy?oldformat=true")
+    lazy val mainContent = document.$("div#content div.mw-parser-output")
 
     def page = {
-      val page        = O()
-      val content     = doc0.$("div#content")
+      val page    = O()
+      val content = document.$("div#content")
       page.title = content.$("h1#firstHeading").text.trim
-      val mainContent = content.$("div#bodyContent > div#mw-content-text > div.mw-parser-output")
 
       val overview           = O()
       val overviewParagraphs = mainContent.$$(":root > p:lt(5)")
@@ -534,9 +534,7 @@ object Smoothly {
     }
 
     def overview = {
-      val content        = doc0.$("div#content")
-      val mainContent    = content.$("div#bodyContent > div#mw-content-text > div.mw-parser-output")
-      val overview: O    = page().overview
+      val overview: O    = page.overview
       val firstSentences = overview.firstSentences[Seq[String]].mkString("\n")
       val headings       = for {
         h    <- mainContent.$$(":root > h2,:root > h3")
@@ -551,8 +549,18 @@ object Smoothly {
         headings.mkString("\n")
     }
 
-    def introduction =
-      ""
+    def introduction = {
+      val paragraphs = mainContent
+        .$$(":root > *:not(.shortdescription):not(.hatnote)")
+        .takeWhile(el => el.normalName != "div" || el.id != "toc")
+      val links      = for {
+        p <- paragraphs
+        a <- p.$$("a:not([href^='#cite'])")
+      } yield s"- [${a.text.trim}](${a.absUrl("href")})"
+      "Overview" + "\n" +
+        links.mkString("\n") + "\n\n" +
+        paragraphs.map(_.text.trim.sentences(0)).mkString("\n")
+    }
 
   }
 }
